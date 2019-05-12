@@ -8,30 +8,26 @@ import os, time, sys
 import glob
 import json
 
-key = "<<Your flickr API key>>"
-secret = "<<Your flickr secret>>"
-wait_time = 1
-keyword = "<<Search Keyword>>"
-savedir = "<<Save Folder>>"
-getImageCount = 1000
+with open('config.json','r',encoding='utf-8') as f:
+    config = json.load(f)
 
 # FlickrAPIにアクセス
 
 page = 1
-files = glob.glob((savedir + '/*.jpg').replace('//', '/'))
+files = glob.glob((config['savedir'] + '/*.jpg').replace('//', '/'))
 nowImageCount = len(files)
 
-while nowImageCount < getImageCount:
-    flickr = FlickrAPI(key, secret, format='parsed-json')
+while nowImageCount < config['getImageCount']:
+    flickr = FlickrAPI(config['key'], config['secret'], format='parsed-json')
     result = flickr.photos.search(
-        text = keyword,
+        text = config['keyword'],
         per_page = 500,
         page = page,
         media = 'photos',
         sort = 'relevance',
         safe_search = 1,
-        license = '1,2,3,4,5,6',
-        extras = 'url_l,owner_name'
+        license = config['api_license'],
+        extras = config['api_extras']
     )
     photos = result['photos']
     for i, photo in enumerate(photos['photo']):
@@ -39,7 +35,7 @@ while nowImageCount < getImageCount:
             url_q = photo['url_l']
         except:
             continue
-        filepath = savedir + '/' + photo['id'] + '.jpg'
+        filepath = config['savedir'] + '/' + photo['id'] + '.jpg'
         if os.path.exists(filepath): continue
         try:
             urlretrieve(url_q, filepath)
@@ -47,7 +43,7 @@ while nowImageCount < getImageCount:
             continue
 
         # save JSON
-        filepath = savedir + '/' + photo['id'] + '.json'
+        filepath = config['savedir'] + '/' + photo['id'] + '.json'
         json_data = {}
         json_data['id'] = photo['id']
         json_data['owner'] = photo['owner']
@@ -61,9 +57,9 @@ while nowImageCount < getImageCount:
         print(line)
 
         nowImageCount += 1
-        if getImageCount <= nowImageCount:
+        if config['getImageCount'] <= nowImageCount:
             break
 
-        time.sleep(wait_time)
+        time.sleep(config['wait_time'])
 
     page += 1
